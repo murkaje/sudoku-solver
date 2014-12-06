@@ -1,6 +1,7 @@
 package ee.ut.ti2014s.algox;
 
 import java.util.*;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -38,8 +39,6 @@ public class AlgoXTest {
 
 		assertEquals(1, solutions.size());
 
-		for(int i = 0; i < expected.length; i++) {
-			assertEquals(expected[i], solutions.get(0)[i]);
-		}
+		Assert.assertArrayEquals(expected, solutions.get(0));
 	}
 }

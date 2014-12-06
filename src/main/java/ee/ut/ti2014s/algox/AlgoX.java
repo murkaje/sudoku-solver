@@ -1,5 +1,7 @@
 package ee.ut.ti2014s.algox;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class AlgoX {
@@ -16,7 +18,7 @@ public class AlgoX {
 	private int curDepth = 0;
 
 	//For debugging/benchmarking
-	private long begin;
+	private final long begin;
 	private long next;
 
 	private List<Set<Integer>> getCurrentCols() {
@@ -52,9 +54,11 @@ public class AlgoX {
 
 		for(int j : Y.get(rowNum)) {
 			for(int i : X.get(j)) {
-				Y.get(i).stream()
-					.filter(k -> k != j)
-					.forEach(k -> X.get(k).remove(i));
+				for(int k : Y.get(i)) {
+					if(k != j) {
+						X.get(k).remove(i);
+					}
+				}
 			}
 			coverCols.add(X.remove(j));
 		}
@@ -66,11 +70,13 @@ public class AlgoX {
 
 		for(int ri = row.size() - 1; ri >= 0; ri--) {
 			int j = row.get(ri);
-			X.put(j, coverCols.get(ri));
+			X.put(j, coverCols.get(ri));	//This is slow, maybe use custom map with hash=key
 			for(int i : X.get(j)) {
-				Y.get(i).stream()
-					.filter(k -> k != j)
-					.forEach(k -> X.get(k).add(i));
+				for(int k : Y.get(i)) {
+					if(k != j) {
+						X.get(k).add(i);
+					}
+				}
 			}
 		}
 	}
@@ -94,7 +100,7 @@ public class AlgoX {
 
 	public static List<int[]> solve(List<Integer> X, Map<Integer, List<Integer>> Y, int limit) {
 		AlgoX problem = new AlgoX(X, Y, limit);
-		problem.solve(new int[9 * 9]);	//Hardcoded expected output size, ugly
+		problem.solve(new int[X.size()]);
 		return problem.solutions;
 	}
 
@@ -116,18 +122,29 @@ public class AlgoX {
 		return copyCurrentBranchRows(minCol);
 	}
 
+	/**
+	 * Vital to use int array instead of ArrayList,
+	 * because elements are added/removed frequently and would trash GC
+	 */
 	private void solve(int[] partial) {
 		if(solutions.size() == limit) {
 			return;
 		}
-		if(System.currentTimeMillis() > next) {
-			System.out.println((System.currentTimeMillis() - begin)
+		long now = System.currentTimeMillis();
+		if(now > next) {
+			System.out.println((now - begin)
 				+ "ms\tunique: " + solutions.size()
-				+ "\trate: " + solutions.size() * 1000 / (System.currentTimeMillis() - begin) + "/sec");
-			next = System.currentTimeMillis() + 1000;
+				+ "\trate: "
+				+ new BigDecimal(solutions.size())
+				.scaleByPowerOfTen(3)
+				.divide(new BigDecimal(now - begin), 0, RoundingMode.HALF_UP)
+				+ "/sec");
+			next = now + 1000;
 		}
 		if(X.isEmpty()) {
-			solutions.add(partial.clone());
+			int[] solution = new int[curDepth];
+			System.arraycopy(partial, 0, solution, 0, curDepth);
+			solutions.add(solution);
 		} else {
 			//Get column with least number of rows
 			Set<Integer> branches = getMinCol();

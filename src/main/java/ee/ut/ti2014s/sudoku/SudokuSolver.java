@@ -86,9 +86,7 @@ public class SudokuSolver {
 				.mapToObj(i -> rows.get(i))
 				.forEach(row -> solution.set(row.get(0), (row.get(1) - 81) % 9 + 1));
 			return solution;
-		}).forEach(solution
-			-> sudokuSolutions.add(solution)
-		);
+		}).forEach(sudokuSolutions::add);
 
 		return sudokuSolutions;
 	}
